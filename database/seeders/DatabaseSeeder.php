@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Attribute_items;
 use App\Models\Attributes;
+use App\Models\Colors;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -61,6 +62,21 @@ class DatabaseSeeder extends Seeder
         Attribute_items::create([
             'attribute_id' =>'2',
             'name' =>'3 Ltr',
+        ]);
+
+        Colors::create([
+            'name' => 'Black',
+            'code' => '#000'
+        ]);
+
+        Colors::create([
+            'name' => 'Red',
+            'code' => '#FF0000'
+        ]);
+
+        Colors::create([
+            'name' => 'Grey',
+            'code' => '#808080'
         ]);
     }
 }

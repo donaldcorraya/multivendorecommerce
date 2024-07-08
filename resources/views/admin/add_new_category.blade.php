@@ -90,6 +90,7 @@
                                     <input type="file" name="icon" class="form-control">
                                 </div>
                             </div>
+                            
                             <div class="row mb-3">
                                 <label for="inputTime" class="col-sm-2 col-form-label">Cover Image(360x360)</label>
                                 <div class="col-sm-10">

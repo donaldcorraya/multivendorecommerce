@@ -8,6 +8,9 @@ use App\Models\Brand_items;
 use App\Models\Categories;
 use App\Models\Category_attribute;
 use App\Models\Colors;
+use App\Models\Image_gallery;
+use App\Models\Product_variants;
+use App\Models\Products;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -107,7 +110,6 @@ class ProductController extends Controller
 
     public function featuredStatusChangeAjax(Request $request){
         $category = Categories::find($request->id);
-        //dd($request->all());
 
         if($request->current_status == 1){
             $status = 0;
@@ -583,7 +585,7 @@ class ProductController extends Controller
 
     public function colorEditSubmit(Request $request){
         $color = Colors::find($request->color_id);
-           //dd($request->all());
+        
         try{
             $validate = Validator::make($request->all(),[
                 'name'            =>'required|string|min:3|max:100',
@@ -637,7 +639,18 @@ class ProductController extends Controller
         $brands = Brand_items::where('status', 1)->get();
         $colors = Colors::all();
         $attributes = Attributes::all();
-        return view('admin.addProduct', compact('brands', 'colors', 'attributes'));
+        $categories = Categories::all();
+        return view('admin.addProduct', compact('brands', 'colors', 'attributes', 'categories'));
+    }
+
+
+    public function productEdit($id){
+        $product = Products::find($id);
+        $brands = Brand_items::where('status', 1)->get();
+        $colors = Colors::all();
+        $attributes = Attributes::all();
+        $categories = Categories::all();
+        return view('admin.editProduct', compact('brands', 'colors', 'attributes', 'categories', 'product'));
     }
 
     public function get_attributes_details(Request $request){
@@ -685,13 +698,335 @@ class ProductController extends Controller
             
         }
 
+
+        if (count($colors) === 0 and count($attributes_attr) === 0 and count($attributes_item_arr) === 0) {
+            return 'error';
+        }
+
         
         return view('admin.get_variant_details',compact('colors', 'attributes_attr', 'attributes_item_arr'));
     }
 
 
-    public function product_add_post(Request $request){
-        dd($request->all());
+    public function allProducts(){
+        $products = Products::with('user')->with('product_variant')->get();
+        return view('admin.all_products', compact('products'));
     }
+
+    public function product_add_post(Request $request){
+
+        //dd($request->all());
+        
+
+        try{
+            $validate = Validator::make($request->all(),[
+                'name'                  =>      'required|string|min:3|max:100',  
+                'category'           =>      'required',  
+                'brand'              =>      'required',  
+                'unit'                  =>      'required',  
+                'unit_amount'           =>      'required', 
+                'unit_price'            =>      'required',
+                'discount'              =>      'required',
+                // 'quantity'              =>      'required',
+                'logo'             =>'image|mimes:jpeg,png,jpg|max:2048|dimensions:width=600,height=600',
+
+            ]);
+
+
+            if($validate->fails()){
+                $notification = array(
+                    'message' => $validate->getMessageBag()->first(),
+                    'alert-type' => 'error'
+                );
+                return redirect()->back()->withInput()->with($notification);
+            }
+
+
+            if($request->thumbnail_image){
+                $thumbnail_image_name = time().'.'.$request->thumbnail_image->extension();
+                $request->thumbnail_image->move(public_path('images/thumbnail_image'), $thumbnail_image_name);
+            }
+
+            if($request->meta_image){
+                $meta_image_name = time().'.'.$request->meta_image->extension();
+                $request->meta_image->move(public_path('images/seo_meta_img'), $meta_image_name);
+            }
+            
+            
+            
+           
+
+           $product = Products::create([
+                'user_id'                       => auth()->user()->id,
+                'name'                          => $request->name,
+                'slug'                          => $request->slug,
+                'category_id'                   => $request->category,
+                'brand_id'                      => $request->brand,
+                'unit'                          => $request->unit,
+                'unit_amount'                   => $request->unit_amount,
+                'minimum_purchase_qty'          => $request->minimum_purchase_qty,
+                'tags'                          => json_encode($request->tags),
+                'bar_code'                      => $request->barcode,
+                'product_type'                  => $request->product_type,
+                'refundable'                    => isset($request->refundable)? 1 : 0,
+                'description'                   => isset($request->description)? $request->description : '',
+                'featured'                      => isset($request->featured)? 1 : 0,
+                'todays_deal'                   => isset($request->todays_deal)? 1 : 0,
+                'flash_deal'                    => isset($request->flash_deal)? 1 : 0,
+                'flash_discount'                => $request->flash_discount,
+                'flash_discount_type'           => $request->flash_discount_type,
+                'tax'                           => $request->tax,
+                'tax_type'                      => $request->tax_type,
+                'vat'                           => $request->vat,
+                'vat_type'                      => $request->vat_type,
+                'thumbnail_image'               => isset($request->thumbnail_image)? 'images/thumbnail_image/'.$thumbnail_image_name : '',
+
+                'seo_meta_title'                => isset($request->seo_meta_title)? $request->seo_meta_title : '',
+                'seo_meta_description'          => isset($request->seo_meta_description)? $request->seo_meta_description : '',
+                'meta_image'                  => isset($request->meta_image)? 'images/meta_image/'.$meta_image_name : '',
+
+                'video_provider'                => $request->video_provider,
+                'cash_on_delivery'              => isset($request->cash_on_delivery)? 1 : 0,
+                'free_shipping'                 => isset($request->free_shipping)? 1 : 0,
+                'flat_rate'                     => isset($request->flat_rate)? 1 : 0,
+                'is_product_quantity_mulitiply' => isset($request->is_product_quantity_mulitiply)? 1 : 0,
+           ]);
+
+
+           if($product){
+
+            $i = 0;
+
+            if(!empty($request->colors)){
+            
+                foreach($request->colors as $color){
+                   
+                    if(!empty($request['attributes'])){
+                        foreach($request['attributes'] as $attribute){
+                            
+                            $attr_names = Attributes::where('id', $attribute)->get();
+
+                            foreach($attr_names as $attr_name){
+                                foreach($request[strtolower($attr_name->name)] as $attr_item){
+                                    Product_variants::create([
+                                        'product_id' => $product->id,
+                                        'color_id' => $color,
+                                        'attribute_id' => $attr_name->id,
+                                        'attribute_item_id' => $attr_item,
+                                        'unit_price' => $request->unit_price,
+                                        'variants_price' => $request->variant_price[$i],
+                                        'discount_amount' => $request->discount_amount,
+                                        'discount_type' => isset($request->discount_type)? $request->discount_type : 'fixed',
+                                        'discount_starts_at' => $request->discount_starts_at,
+                                        'discount_expires_at' => $request->discount_expires_at,
+                                        'max_discount_amount' => $request->max_amount,
+                                        'min_discount_amount' => $request->min_amount,
+                                        'points' => $request->points,
+                                        'qty' => isset($request->qty)? $request->qty : 0,
+                                        'sku' => $request->sku[$i],
+                                        'image' => isset($request->variant_img[$i])? $request->variant_img[$i] : '',
+                                        'low_qty' => isset($request->low_qty)? $request->low_qty : '',
+                                        'show_stock_quantity' => isset($request->show_stock_quantity)? $request->show_stock_quantity : 0,
+                                        'show_stock_with_text_only' => isset($request->show_stock_with_text_only)? $request->show_stock_with_text_only : 0,
+                                        'hide_stock' => isset($request->hide_stock)? $request->hide_stock : 0,
+                                    ]);
+                                }
+                            }
+                        }
+
+                    }else{
+
+                        Product_variants::create([
+                            'product_id' => $product->id,
+                            'color_id' => $color,
+                            'unit_price' => $request->unit_price,
+                            'variants_price' => $request->variant_price[$i],
+                            'discount_amount' => $request->discount_amount,
+                            'discount_type' => isset($request->discount_type)? $request->discount_type : 'fixed',
+                            'discount_starts_at' => $request->discount_starts_at,
+                            'discount_expires_at' => $request->discount_expires_at,
+                            'max_discount_amount' => $request->max_amount,
+                            'min_discount_amount' => $request->min_amount,
+                            'points' => $request->points,
+                            'qty' => isset($request->qty)? $request->qty : 0,
+                            'sku' => $request->sku[$i],
+                            'image' => isset($request->variant_img[$i])? $request->variant_img[$i] : '',
+                            'low_qty' => isset($request->low_qty)? $request->low_qty : '',
+                            'show_stock_quantity' => isset($request->show_stock_quantity)? $request->show_stock_quantity : 0,
+                            'show_stock_with_text_only' => isset($request->show_stock_with_text_only)? $request->show_stock_with_text_only : 0,
+                            'hide_stock' => isset($request->hide_stock)? $request->hide_stock : 0,
+                        ]);
+
+                    }
+                    $i++;
+                }
+
+            }elseif(!empty($request['attributes'])){
+                foreach($request['attributes'] as $attribute){
+                        
+                    $attr_names = Attributes::where('id', $attribute)->get();
+
+                    foreach($attr_names as $attr_name){
+                        foreach($request[strtolower($attr_name->name)] as $attr_item){
+                            Product_variants::create([
+                                'product_id' => $product->id,
+                                'attribute_id' => $attr_name->id,
+                                'attribute_item_id' => $attr_item,
+                                'unit_price' => $request->unit_price,
+                                'variants_price' => $request->variant_price[$i],
+                                'discount_amount' => $request->discount_amount,
+                                'discount_type' => isset($request->discount_type)? $request->discount_type : 'fixed',
+                                'discount_starts_at' => $request->discount_starts_at,
+                                'discount_expires_at' => $request->discount_expires_at,
+                                'max_discount_amount' => $request->max_amount,
+                                'min_discount_amount' => $request->min_amount,
+                                'points' => $request->points,
+                                'qty' => isset($request->qty)? $request->qty : 0,
+                                'sku' => $request->sku[$i],
+                                'image' => isset($request->variant_img[$i])? $request->variant_img[$i] : '',
+                                'low_qty' => isset($request->low_qty)? $request->low_qty : '',
+                                'show_stock_quantity' => isset($request->show_stock_quantity)? $request->show_stock_quantity : 0,
+                                'show_stock_with_text_only' => isset($request->show_stock_with_text_only)? $request->show_stock_with_text_only : 0,
+                                'hide_stock' => isset($request->hide_stock)? $request->hide_stock : 0,
+                            ]);
+                            $i++;
+                        }
+                    }
+                   
+                }
+                
+            }else{
+                Product_variants::create([
+                    'product_id' => $product->id,
+                    'unit_price' => $request->unit_price,
+                    'discount_amount' => $request->discount_amount,
+                    'discount_type' => isset($request->discount_type)? $request->discount_type : 'fixed',
+                    'discount_starts_at' => $request->discount_starts_at,
+                    'discount_expires_at' => $request->discount_expires_at,
+                    'max_discount_amount' => $request->max_amount,
+                    'min_discount_amount' => $request->min_amount,
+                    'points' => $request->points,
+                    'qty' => isset($request->quantity)? $request->quantity : 0,
+                    'sku' => $request->sku,
+                    'image' => isset($request->variant_img)? $request->variant_img : '',
+                    'low_qty' => isset($request->low_qty)? $request->low_qty : '',
+                    'show_stock_quantity' => isset($request->show_stock_quantity)? $request->show_stock_quantity : 0,
+                    'show_stock_with_text_only' => isset($request->show_stock_with_text_only)? $request->show_stock_with_text_only : 0,
+                    'hide_stock' => isset($request->hide_stock)? $request->hide_stock : 0,
+                ]);
+            }
+
+            
+
+            if($gallery_images = $request->gallery_image){
+
+                $i = 0;
+
+                foreach($gallery_images as $gallery_image){
+    
+                    $gallery_image_name = time().$i.'.'.$gallery_image->extension();
+                    $gallery_image->move(public_path('images/gallery_image'), $gallery_image_name);
+                    $i++;
+
+                    Image_gallery::create([
+                        'product_id' => $product->id,
+                        'image' => $gallery_image_name,
+                    ]);
+
+                }
+    
+            }
+
+           }
+
+           $notification = array(
+                'message' => 'Successfully Added',
+                'alert-type' => 'success'
+            );
+
+            return redirect()->route('all.products')->with($notification);
+
+        }catch(Exception $e){
+
+            $notification = array(
+                'message' => $e->getMessage(),
+                'alert-type' => 'error'
+            );
+            return redirect()->back()->with($notification);
+        }
+
+        return redirect()->route('all.products')->with($notification);
+    }
+
+
+    public function productFeaturedStatusChangeAjax(Request $request){
+
+        $products = Products::find($request->id);
+
+        if($request->current_status == 1){
+            $status = 0;
+        }
+
+        if($request->current_status == 0){
+            $status = 1;
+        }
+
+        $update = $products->update([
+            'featured' => $status,
+        ]);
+
+        if(!$update){
+            return response()->json(['error' => true, 'message' => 'Status not updated']);
+        }
+
+        return response()->json(['error' => false, 'message' => 'Status updated']);
+    }
+
+    public function productStatusChangeAjax(Request $request){
+        $products = Products::find($request->id);
+
+        if($request->current_status == 1){
+            $status = 0;
+        }
+
+        if($request->current_status == 0){
+            $status = 1;
+        }
+
+        $update = $products->update([
+            'status' => $status,
+        ]);
+
+        if(!$update){
+            return response()->json(['error' => true, 'message' => 'Status not updated']);
+        }
+
+        return response()->json(['error' => false, 'message' => 'Status updated']);
+    }
+
+    public function todaysDealStatusChangeAjax(Request $request){
+
+        $products = Products::find($request->id);
+
+        if($request->current_status == 1){
+            $status = 0;
+        }
+
+        if($request->current_status == 0){
+            $status = 1;
+        }
+
+        $update = $products->update([
+            'todays_deal' => $status,
+        ]);
+
+        if(!$update){
+            return response()->json(['error' => true, 'message' => 'Status not updated']);
+        }
+
+        return response()->json(['error' => false, 'message' => 'Status updated']);
+
+    }
+    
     
 }

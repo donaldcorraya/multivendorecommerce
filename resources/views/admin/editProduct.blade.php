@@ -1,5 +1,5 @@
 @extends('admin.layout')
-@section('title', 'Add New Product')
+@section('title', 'Edit Product')
 @section('content')
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -293,14 +293,14 @@
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Product Name <span class="text-danger">*</span></label>
                                             <div class="col-sm-9">
-                                                <input type="text" onkeyup="createSlug(this)" name="name" value="{{ old('name') }}" placeholder="Product Name" class="form-control">
+                                                <input type="text" onkeyup="createSlug(this)" name="name" value="{{ $product->name }}" placeholder="Product Name" class="form-control">
                                             </div>
                                         </div>
 
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Slug <span class="text-danger">*</span></label>
                                             <div class="col-sm-9">
-                                                <input type="text" id="slug" name="slug" value="{{ old('slug') }}" placeholder="Slug" class="form-control">
+                                                <input type="text" id="slug" name="slug" value="{{ $product->slug }}" placeholder="Slug" class="form-control">
                                             </div>
                                         </div>
                                         
@@ -311,7 +311,7 @@
                                                 <select class="form-select {{ old('category') }}" name="category" aria-label="category">
                                                     <option value="">Select Category</option>
                                                     @foreach($categories as $category)
-                                                    <option <?=(old('category') == $category->id )? 'selected' : ''?> value="{{ $category->id }}">{{ $category->name }}</option>
+                                                    <option <?=($product->category_id == $category->id )? 'selected' : ''?> value="{{ $category->id }}">{{ $category->name }}</option>
 
                                                     @if(count($category->childrenRecursive) > 0)
                                                         @include('admin.subCategories', ['subcategories' => $category->childrenRecursive, 'parent' => $category->name])
@@ -327,7 +327,7 @@
                                                 <select class="form-select" name="brand" aria-label="">
                                                     <option value="">Select</option>
                                                     @foreach($brands as $brand)
-                                                    <option <?=(old('brand') == $brand->id )? 'selected' : ''?> value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                                    <option <?=($product->brand_id == $brand->id )? 'selected' : ''?> value="{{ $brand->id }}">{{ $brand->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -336,36 +336,53 @@
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Unit <span class="text-danger">*</span></label>
                                             <div class="col-sm-9">
-                                                <input type="text" name="unit" placeholder="Unit (e.g. KG, Pc etc)" class="form-control">
+                                                <input type="text" value="{{ $product->unit }}" name="unit" placeholder="Unit (e.g. KG, Pc etc)" class="form-control">
                                             </div>
                                         </div>
 
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Weight (In Kg)</label>
                                             <div class="col-sm-9">
-                                                <input type="text" name="unit_amount" value="0" name="weight" placeholder="0" class="form-control">
+                                                <input type="text" name="unit_amount" value="{{ $product->unit_amount }}" name="weight" placeholder="0" class="form-control">
                                             </div>
                                         </div>
 
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Minimum Purchase Qty <span class="text-danger">*</span></label>
                                             <div class="col-sm-9">
-                                                <input type="text" value="1" name="minimum_purchase_qty" placeholder="1" class="form-control">
+                                                <input type="text" value="{{ $product->minimum_purchase_qty }}" name="minimum_purchase_qty" placeholder="1" class="form-control">
                                             </div>
                                         </div>
 
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Tags</label>
                                             <div class="col-sm-9">
-                                                <input type="text" id="newTag" />
-                                                <ul id="tagList"></ul>
+                                            
+                                                <input type="text" id="newTag"  value=""/>
+                                                
+                                                <ul id="tagList">
+                                                    <?php
+
+                                                    $product_tags = json_decode($product->tags);
+
+                                                    if(!empty($product_tags[0])){
+                                                        foreach($product_tags as $product_tag){
+                                                    ?>
+
+                                                    <li>{{ $product_tag }}<input type="hidden" name="tags[]" value="dasd"><span class="rmTag">×</span></li>
+
+                                                    <?php
+                                                        }
+                                                    }
+                                                    ?>
+                                                </ul>
                                             </div>
                                         </div>
 
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Barcode</label>
                                             <div class="col-sm-9">
-                                                <input type="text" value="" name="barcode" placeholder="Barcode" class="form-control">
+                                                <input type="text" value="{{ $product->bar_code  }}" name="barcode" placeholder="Barcode" class="form-control">
                                             </div>
                                         </div>
 
@@ -373,8 +390,8 @@
                                             <label for="inputText" class="col-sm-3 col-form-label">Product Type</label>
                                             <div class="col-sm-9">
                                                 <select class="form-select" name="product_type" aria-label="">
-                                                    <option value="single_product">Single Product</option>
-                                                    <option value="variation_product">Product Variation</option>
+                                                    <option {{ ($product->product_type == 'single_product')? "selected" : ''  }} value="single_product">Single Product</option>
+                                                    <option {{ ($product->product_type == 'variation_product')? "selected" : ''  }} value="variation_product">Product Variation</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -382,14 +399,14 @@
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Refundable</label>
                                             <div class="col-sm-9">
-                                                <input name="refundable" class="form-check-input" type="checkbox" id="gridCheck">
+                                                <input name="refundable" class="form-check-input" type="checkbox" id="gridCheck" {{ ($product->refundable == '1')? "checked" : ''  }}>
                                             </div>
                                         </div>
 
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Description</label>
                                             <div class="col-sm-9">
-                                                <textarea id="editor" cols="30" rows="10" name="description" class="form-control" style="height: 100px"></textarea>
+                                                <textarea id="editor" cols="30" rows="10" name="description" class="form-control" style="height: 100px">{{ $product->description }}</textarea>
                                             </div>
                                         </div>
 
@@ -399,7 +416,7 @@
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Featured</label>
                                             <div class="col-sm-9">
-                                                <input name="featured" class="form-check-input" type="checkbox" id="gridCheck">
+                                                <input name="featured" class="form-check-input" type="checkbox" id="gridCheck" {{ ($product->featured == '1')? "checked" : ''  }}>
                                                 <small>If you enable this, this product will be granted as a featured product.</small>
                                             </div>
                                         </div>
@@ -407,7 +424,7 @@
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Today's Deal</label>
                                             <div class="col-sm-9">
-                                                <input name="todays_deal" class="form-check-input" type="checkbox" id="gridCheck">
+                                                <input name="todays_deal" class="form-check-input" type="checkbox" id="gridCheck" {{ ($product->todays_deal == '1')? "checked" : ''  }}>
                                                 <small>If you enable this, this product will be granted as a todays deal product.</small>
                                             </div>
                                         </div>
@@ -421,12 +438,12 @@
                                             <label class="col-sm-3 col-form-label">Add To Flash</label>
                                             <div class="col-sm-9">
                                                 <select class="form-select" name="flash_deal" aria-label="Default select example">
-                                                    <option value="" selected>Choose Flash Title</option>
-                                                    <option value="1">End of Season</option>
-                                                    <option value="2">Winter Sale</option>
-                                                    <option value="3">Electronic</option>
-                                                    <option value="4">Flash Deal</option>
-                                                    <option value="5">Flash Sale</option>
+                                                    <option value="">Choose Flash Title</option>
+                                                    <option {{ ($product->flash_deal == '1')? "selected" : ''  }} value="1">End of Season</option>
+                                                    <option {{ ($product->flash_deal == '2')? "selected" : ''  }} value="2">Winter Sale</option>
+                                                    <option {{ ($product->flash_deal == '3')? "selected" : ''  }} value="3">Electronic</option>
+                                                    <option {{ ($product->flash_deal == '4')? "selected" : ''  }} value="4">Flash Deal</option>
+                                                    <option {{ ($product->flash_deal == '5')? "selected" : ''  }} value="5">Flash Sale</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -434,7 +451,7 @@
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Discount</label>
                                             <div class="col-sm-9">
-                                                <input type="number" value="0" name="flash_discount" placeholder="Discount" class="form-control">
+                                                <input type="number" value="{{ $product->flash_discount }}" name="flash_discount" placeholder="Discount" class="form-control">
                                             </div>
                                         </div>
 
@@ -443,8 +460,8 @@
                                             <div class="col-sm-9">
                                                 <select class="form-select" name="flash_discount_type" aria-label="Default select example">
                                                     <option value="" selected>Choose Discount Type</option>
-                                                    <option value="1">Flat</option>
-                                                    <option value="2">Percent</option>
+                                                    <option {{ ($product->flash_discount_type == '1')? "selected" : ''  }} value="1">Flat</option>
+                                                    <option {{ ($product->flash_discount_type == '2')? "selected" : ''  }} value="2">Percent</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -457,15 +474,15 @@
 
                                             <div class="col-md-6">
                                                 <label for="inputEmail5" class="form-label">Tax</label>
-                                                <input name="tax" type="text" class="form-control" id="inputEmail5">
+                                                <input name="tax" value="{{ $product->tax }}" type="text" class="form-control" id="inputEmail5">
                                             </div>
 
                                             <div class="col-md-6">
                                                 <label for="inputPassword5" class="form-label">Tax type</label>
                                                 <select class="form-select" name="tax_type" aria-label="Default select example">
                                                     <option value="" selected>Tax Type</option>
-                                                    <option value="1">Flat</option>
-                                                    <option value="2">Percent</option>
+                                                    <option {{ ($product->tax_type == '1')? "selected" : ''  }} value="1">Flat</option>
+                                                    <option {{ ($product->tax_type == '2')? "selected" : ''  }} value="2">Percent</option>
                                                 </select>
                                             </div>
 
@@ -475,15 +492,15 @@
 
                                             <div class="col-md-6">
                                                 <label for="inputEmail5" class="form-label">Vat</label>
-                                                <input name="vat" type="text" class="form-control" id="inputEmail5">
+                                                <input name="vat" value="{{ $product->vat }}" type="text" class="form-control" id="inputEmail5">
                                             </div>
 
                                             <div class="col-md-6">
                                                 <label for="inputPassword5" class="form-label">Vat type</label>
                                                 <select class="form-select" name="vat_type" aria-label="Default select example">
                                                     <option value="" selected>Vat Type</option>
-                                                    <option value="1">Flat</option>
-                                                    <option value="2">Percent</option>
+                                                    <option {{ ($product->vat_type == '1')? "selected" : ''  }} value="1">Flat</option>
+                                                    <option {{ ($product->vat_type == '2')? "selected" : ''  }} value="2">Percent</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -501,7 +518,9 @@
                                             <div class="col-sm-9">
                                                 <input type="file" name="gallery_image[]" multiple data-max_length="30" class="form-control upload__inputfile">
                                             </div>
-                                            <div class="upload__img-wrap"></div>
+                                            <div class="upload__img-wrap">
+                                                
+                                            </div>
                                         </div>
 
 
@@ -772,7 +791,7 @@
         var $newTag = $("#newTag");
 
         
-        tagList_render();
+        //tagList_render();
 
         
         function tagList_render() {

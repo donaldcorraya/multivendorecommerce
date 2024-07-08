@@ -294,7 +294,7 @@
           </li>
 
           <li>
-            <a href="#">
+            <a href="{{ route('all.products') }}">
               <i class="bi bi-circle"></i><span>All Products</span>
             </a>
           </li>

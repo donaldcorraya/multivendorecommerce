@@ -56,7 +56,14 @@ Route::middleware(['admin'])->group(function(){
     Route::get('/colors_delete/{id}', [ProductController::class, 'colorsDelete'])->name('colors_delete');
 
     Route::get('/add_product', [ProductController::class, 'addProduct'])->name('add_product');
+    Route::get('/product_edit/{id}', [ProductController::class, 'productEdit'])->name('product_edit');
     Route::post('/get_variant_details', [ProductController::class, 'get_variant_details'])->name('get_variant_details');
     Route::post('/get_attributes_details', [ProductController::class, 'get_attributes_details'])->name('get_attributes_details');
     Route::post('/product_add_post', [ProductController::class, 'product_add_post'])->name('product.add.post');
+    Route::get('/all_products', [ProductController::class, 'allProducts'])->name('all.products');
+
+    Route::post('/todays_deal_status_change_ajax', [ProductController::class, 'todaysDealStatusChangeAjax'])->name('todays_deal_status_change_ajax');
+    Route::post('/product_status_change_ajax', [ProductController::class, 'productStatusChangeAjax'])->name('product_status_change_ajax');
+    Route::post('/product_featured_status_change_ajax', [ProductController::class, 'productFeaturedStatusChangeAjax'])->name('product_featured_status_change_ajax');
+    
 });
