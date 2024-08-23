@@ -2,9 +2,37 @@
 @section('title', 'Edit Product')
 @section('content')
 
+
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css" />
+
+
+<script>
+
+    var color_ids = [];
+    var attribute_ids = [];
+    var attribute_item_ids = [];
+
+    
+    @foreach($product->product_variant as $product_variant)
+
+    if(color_ids.indexOf({{ $product_variant->color_id }}) == -1){  
+        color_ids.push({{ $product_variant->color_id }});
+    }
+
+    if(attribute_ids.indexOf({{ $product_variant->attribute_id }}) == -1){  
+        attribute_ids.push({{ $product_variant->attribute_id }});
+    }
+
+
+    if(attribute_item_ids.indexOf({{ $product_variant->attribute_item_id }}) == -1){  
+        attribute_item_ids.push({{ $product_variant->attribute_item_id }});
+    }
+        
+    @endforeach
+
+</script>
 
 <script type="importmap">
     {
@@ -16,13 +44,15 @@
 </script>
 
 <style>
-    .ck.ck-content.ck-editor__editable.ck-rounded-corners.ck-editor__editable_inline.ck-blurred, .ck.ck-content.ck-editor__editable.ck-rounded-corners.ck-editor__editable_inline.ck-focused{
+    .ck.ck-content.ck-editor__editable.ck-rounded-corners.ck-editor__editable_inline.ck-blurred,
+    .ck.ck-content.ck-editor__editable.ck-rounded-corners.ck-editor__editable_inline.ck-focused {
         min-height: 300px;
     }
 
-    .ck .ck-powered-by{
+    .ck .ck-powered-by {
         display: none;
     }
+
     .select2-container {
         width: 100% !important;
     }
@@ -303,7 +333,7 @@
                                                 <input type="text" id="slug" name="slug" value="{{ $product->slug }}" placeholder="Slug" class="form-control">
                                             </div>
                                         </div>
-                                        
+
 
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Category <span class="text-danger">*</span></label>
@@ -311,10 +341,10 @@
                                                 <select class="form-select {{ old('category') }}" name="category" aria-label="category">
                                                     <option value="">Select Category</option>
                                                     @foreach($categories as $category)
-                                                    <option <?=($product->category_id == $category->id )? 'selected' : ''?> value="{{ $category->id }}">{{ $category->name }}</option>
+                                                    <option <?= ($product->category_id == $category->id) ? 'selected' : '' ?> value="{{ $category->id }}">{{ $category->name }}</option>
 
                                                     @if(count($category->childrenRecursive) > 0)
-                                                        @include('admin.subCategories', ['subcategories' => $category->childrenRecursive, 'parent' => $category->name])
+                                                    @include('admin.subCategories', ['subcategories' => $category->childrenRecursive, 'parent' => $category->name])
                                                     @endif
                                                     @endforeach
                                                 </select>
@@ -327,7 +357,7 @@
                                                 <select class="form-select" name="brand" aria-label="">
                                                     <option value="">Select</option>
                                                     @foreach($brands as $brand)
-                                                    <option <?=($product->brand_id == $brand->id )? 'selected' : ''?> value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                                    <option <?= ($product->brand_id == $brand->id) ? 'selected' : '' ?> value="{{ $brand->id }}">{{ $brand->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -357,19 +387,19 @@
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Tags</label>
                                             <div class="col-sm-9">
-                                            
-                                                <input type="text" id="newTag"  value=""/>
-                                                
+
+                                                <input type="text" id="newTag" value="" />
+
                                                 <ul id="tagList">
                                                     <?php
 
                                                     $product_tags = json_decode($product->tags);
 
-                                                    if(!empty($product_tags[0])){
-                                                        foreach($product_tags as $product_tag){
+                                                    if (!empty($product_tags[0])) {
+                                                        foreach ($product_tags as $product_tag) {
                                                     ?>
 
-                                                    <li>{{ $product_tag }}<input type="hidden" name="tags[]" value="dasd"><span class="rmTag">×</span></li>
+                                                            <li>{{ $product_tag }}<input type="hidden" name="tags[]" value="dasd"><span class="rmTag">×</span></li>
 
                                                     <?php
                                                         }
@@ -518,9 +548,20 @@
                                             <div class="col-sm-9">
                                                 <input type="file" name="gallery_image[]" multiple data-max_length="30" class="form-control upload__inputfile">
                                             </div>
+
+
+
                                             <div class="upload__img-wrap">
-                                                
+                                                @foreach($product->image_gallery as $g_image)
+                                                <div class="upload__img-box">
+                                                    <div style="background: url({{ asset($g_image->image) }}); background-repeat: no-repeat; background-position: center; background-size: cover; position: relative; padding-bottom: 100%;" data-number="0" data-file="IMG_8548-copy.jpg" class="img-bg">
+                                                        <div class="upload__img-close"></div>
+                                                    </div>
+                                                </div>
+                                                @endforeach
                                             </div>
+
+
                                         </div>
 
 
@@ -529,17 +570,16 @@
                                             <div class="col-sm-9">
                                                 <input type="file" class="form-control" id="choose-file" name="thumbnail_image" accept="image/*" />
                                             </div>
-                                            <div id="img-preview"></div>
-
+                                            <div id="img-preview" style="display: block;">
+                                                <img src="{{ asset($product->thumbnail_image) }}">
+                                            </div>
                                         </div>
-
-
 
 
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Video Provider</label>
                                             <div class="col-sm-9">
-                                                <input type="text" name="video_provider_youtube" placeholder="Youtube" class="form-control">
+                                                <input type="text" value="{{ $product->video_provider }}" name="video_provider_youtube" placeholder="Youtube" class="form-control">
                                             </div>
                                         </div>
                                     </div>
@@ -570,7 +610,7 @@
                                             </div>
                                         </div>
 
-                                        <div id="attributes"> </div>
+                                        <div id="attributes"></div>
 
                                         <div class="row mb-3">
                                             <label for="inputText" class="col-sm-3 col-form-label">Unit price <span class="text-danger">*</span></label>
@@ -760,8 +800,8 @@
 
                                 </div>
                                 <div class="col-sm-10">
-                                    <button type="submit" class="btn btn-secondary">Save & Unpublished</button>
-                                    <button type="submit" class="btn btn-success">Save & Published</button>
+                                    <button type="submit" name="submit" value="0" class="btn btn-secondary">Save & Unpublished</button>
+                                    <button type="submit" name="submit" value="1" class="btn btn-success">Save & Published</button>
                                 </div>
                             </form>
                         </div>
@@ -786,27 +826,27 @@
     (function() {
         var tagList = [];
 
-        
+
         var $tagList = $("#tagList");
         var $newTag = $("#newTag");
 
-        
+
         //tagList_render();
 
-        
+
         function tagList_render() {
 
             $tagList.empty();
             tagList.map(function(_tag) {
-                
+
                 var temp = "<li>" + _tag + "<input type='hidden' name='tags[]' value=" + _tag + " /><span class='rmTag'>&times;</span></li>";
 
                 $tagList.append(temp);
             });
         };
 
-        
-        $newTag.on('keyup', function(e){
+
+        $newTag.on('keyup', function(e) {
 
             if (e.keyCode == 13) {
 
@@ -822,7 +862,7 @@
             }
         });
 
-        
+
         $tagList.on("click", "li>span.rmTag", function() {
             var index = $(this).parent().index();
             tagList.splice(index, 1);
@@ -832,9 +872,32 @@
 </script>
 
 <script>
-    $(document).ready(function() {
-        $('.multiples_items').select2();
+    $(document).ready(function(){
+        
+        $.ajax({
+            url : "{{ route('product.edit.get.details') }}",
+            type : 'get',
+            data : {
+                "_token": "{{ csrf_token() }}",
+                "produc_id" : "{{ $product_id }}"
+            },
+            dataType : 'html',
+            success : function(res){            
+                if(res){
+                    $("#attributes").html(res);
+                    $('.multiples_items_new').select2();
+                    colorChange();
+                }   
+            }
+        });
+
     });
+
+    $('.multiples_items').select2();
+    $('#colors_attr').val(color_ids);
+    $('#colors_attr').select2();
+    $('#attributes_attr').val(attribute_ids);
+    $('#attributes_attr').select2();
 
 
 
@@ -846,6 +909,7 @@
     });
 
     $('#attributes_attr').on('change.select2', function(e) {
+
         $('#loader').css({
             'display': 'flex'
         });
@@ -873,7 +937,7 @@
         var getAttributes = {
             'attributes_items': opts
         };
-        
+
         colorChange();
     }
 
@@ -882,14 +946,15 @@
         var attributes_attr = $('#attributes_attr').val();
 
 
-        if (attributes_attr.length > 0){
+        if (attributes_attr.length > 0) {
 
             $.ajax({
-                url: "{{ route('get_attributes_details') }}",
+                url: "{{ route('get_attributes_details_edit') }}",
                 type: 'post',
                 data: {
                     "_token": "{{ csrf_token() }}",
-                    'data': JSON.stringify(attributes_attr)
+                    'data': JSON.stringify(attributes_attr),
+                    'product_id' : "{{ $product_id }}",
                 },
                 dataType: 'html',
                 success: function(res) {
@@ -898,12 +963,13 @@
                         $(".attr_create").each(function() {
                             $('.attr_create .multiples_items').select2();
                         });
+                        
                         colorChange();
                     }
                 }
             });
 
-        }else{
+        } else {
             $('#attributes').empty();
             colorChange();
         }
@@ -912,14 +978,15 @@
     }
 
 
-    function colorChange() {
+    function colorChange(id){
+        
 
         var color_id = {
             'color_id': $('#colors_attr').val(),
         };
-        
 
-        if(color_id.color_id.length == 0){
+
+        if (color_id.color_id.length == 0) {
             color_id = [];
         }
 
@@ -943,12 +1010,18 @@
             'attributes_items': attributes_array,
         };
 
+        var product_id = {
+            'product_id': "{{ $product_id }}",
+        };
+
 
         const obj = {
+            'product_id' : product_id,
             'color_id': color_id,
             'attributes_attr': attributes_attr,
             'attributes_item': attributes_item
         };
+        
         const data = JSON.stringify(obj);
         ajaxGetData(data);
     }
@@ -962,24 +1035,25 @@
 
     function ajaxGetData(data) {
         $.ajax({
-            url: "{{ route('get_variant_details') }}",
+            url: "{{ route('get_variant_details_edit') }}",
             type: 'post',
             data: {
                 "_token": "{{ csrf_token() }}",
-                'data': data
+                'data': data,
+                'product_id': "{{ $product_id }}",
             },
             dataType: 'html',
             success: function(res) {
                 $('#loader').css({
                     'display': 'none'
                 });
-               
-                if(res){
+
+                if (res) {
                     $('#variant_details').html(res);
                     $(".single_product").hide();
                 }
 
-                if(res == 'error'){
+                if (res == 'error') {
                     $(".single_product").show();
                 }
             }
@@ -1084,15 +1158,15 @@
     } from 'ckeditor5';
 
     ClassicEditor
-        .create( document.querySelector( '#editor' ), {
-            plugins: [ Essentials, Bold, Italic, Font, Paragraph ],
+        .create(document.querySelector('#editor'), {
+            plugins: [Essentials, Bold, Italic, Font, Paragraph],
             toolbar: {
                 items: [
                     'undo', 'redo', '|', 'bold', 'italic', '|',
                     'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor'
                 ]
             }
-        } )
+        })
         .then( /* ... */ )
         .catch( /* ... */ );
 </script>

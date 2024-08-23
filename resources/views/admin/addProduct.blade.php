@@ -741,8 +741,8 @@
 
                                 </div>
                                 <div class="col-sm-10">
-                                    <button type="submit" class="btn btn-secondary">Save & Unpublished</button>
-                                    <button type="submit" class="btn btn-success">Save & Published</button>
+                                    <button type="submit" name="submit" value="0" class="btn btn-secondary">Save & Unpublished</button>
+                                    <button type="submit" name="submit" value="1"  class="btn btn-success">Save & Published</button>
                                 </div>
                             </form>
                         </div>

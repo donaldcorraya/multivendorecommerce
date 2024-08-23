@@ -645,12 +645,28 @@ class ProductController extends Controller
 
 
     public function productEdit($id){
-        $product = Products::find($id);
+        $product = Products::with('image_gallery')->with('product_variant')->find($id);
         $brands = Brand_items::where('status', 1)->get();
         $colors = Colors::all();
         $attributes = Attributes::all();
         $categories = Categories::all();
-        return view('admin.editProduct', compact('brands', 'colors', 'attributes', 'categories', 'product'));
+        $product_id = $id;
+        return view('admin.editProduct', compact('brands', 'colors', 'attributes', 'categories', 'product', 'product_id'));
+    }
+
+    public function get_attributes_details_edit(Request $request){
+        $attr_details = array_values(json_decode($request->data, true));
+        
+        if (empty(array_filter($attr_details))){
+            return false;
+        }
+
+        foreach($attr_details as $attr_detail){
+            $data_items[] = Attributes::with('attribute_items')->where('id', (int)$attr_detail)->get();
+        }
+
+        
+        return view('admin.get_attributes_details_re', compact('data_items'));
     }
 
     public function get_attributes_details(Request $request){
@@ -707,10 +723,61 @@ class ProductController extends Controller
         return view('admin.get_variant_details',compact('colors', 'attributes_attr', 'attributes_item_arr'));
     }
 
+    public function get_variant_details_edit(Request $request){
+        
+       
+        
+        $product_id = $request->product_id;
+        
+        $colors = array();
+        $attributes_attr = array();
+        $attributes_item_arr = array();
+        
+        
+
+        foreach(json_decode($request->data) as $y){
+            
+            if(isset($y->color_id)){
+                foreach($y->color_id as $colors_item){
+                    $colors[] = Colors::find($colors_item);
+                }
+            }
+
+            if(isset($y->attributes_attr)){
+                foreach($y->attributes_attr as $attributes_attr_item){
+                    $attributes_attr[] = Attributes::find($attributes_attr_item);
+                }
+            }
+
+            if(isset($y->attributes_items)){
+                foreach($y->attributes_items as $attributes_item){
+                    $attributes_item_arr[] = Attribute_items::find($attributes_item);
+                }
+            }
+           
+            
+        }
+
+
+        if (count($colors) === 0 and count($attributes_attr) === 0 and count($attributes_item_arr) === 0) {
+            return 'error';
+        }
+
+        
+        return view('admin.get_variant_details_edit',compact('colors', 'attributes_attr', 'attributes_item_arr', 'product_id'));
+    }
+
 
     public function allProducts(){
         $products = Products::with('user')->with('product_variant')->get();
         return view('admin.all_products', compact('products'));
+    }
+
+    
+    public function productEditGetDetails(Request $request){
+        
+        $product = Products::with('product_variant')->find($request->produc_id);
+        return view('admin.get_attributes_details_edit', compact('product'));
     }
 
     public function product_add_post(Request $request){
@@ -780,6 +847,7 @@ class ProductController extends Controller
                 'vat'                           => $request->vat,
                 'vat_type'                      => $request->vat_type,
                 'thumbnail_image'               => isset($request->thumbnail_image)? 'images/thumbnail_image/'.$thumbnail_image_name : '',
+                'unit_price' => $request->unit_price,
 
                 'seo_meta_title'                => isset($request->seo_meta_title)? $request->seo_meta_title : '',
                 'seo_meta_description'          => isset($request->seo_meta_description)? $request->seo_meta_description : '',
@@ -790,6 +858,7 @@ class ProductController extends Controller
                 'free_shipping'                 => isset($request->free_shipping)? 1 : 0,
                 'flat_rate'                     => isset($request->flat_rate)? 1 : 0,
                 'is_product_quantity_mulitiply' => isset($request->is_product_quantity_mulitiply)? 1 : 0,
+                'status'                        => $request->submit,
            ]);
 
 
@@ -813,7 +882,6 @@ class ProductController extends Controller
                                         'color_id' => $color,
                                         'attribute_id' => $attr_name->id,
                                         'attribute_item_id' => $attr_item,
-                                        'unit_price' => $request->unit_price,
                                         'variants_price' => $request->variant_price[$i],
                                         'discount_amount' => $request->discount_amount,
                                         'discount_type' => isset($request->discount_type)? $request->discount_type : 'fixed',
@@ -826,7 +894,7 @@ class ProductController extends Controller
                                         'sku' => $request->sku[$i],
                                         'image' => isset($request->variant_img[$i])? $request->variant_img[$i] : '',
                                         'low_qty' => isset($request->low_qty)? $request->low_qty : '',
-                                        'show_stock_quantity' => isset($request->show_stock_quantity)? $request->show_stock_quantity : 0,
+                                        'show_stock_quantity' => isset($request->show_stock_quantity)? 1 : 0,
                                         'show_stock_with_text_only' => isset($request->show_stock_with_text_only)? $request->show_stock_with_text_only : 0,
                                         'hide_stock' => isset($request->hide_stock)? $request->hide_stock : 0,
                                     ]);
@@ -930,7 +998,7 @@ class ProductController extends Controller
 
                     Image_gallery::create([
                         'product_id' => $product->id,
-                        'image' => $gallery_image_name,
+                        'image' => 'images/gallery_image/'.$gallery_image_name,
                     ]);
 
                 }

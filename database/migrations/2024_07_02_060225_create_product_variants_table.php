@@ -13,11 +13,10 @@ return new class extends Migration
     {
         Schema::create('product_variants', function (Blueprint $table) {
             $table->id();
-            $table->string('product_id');
-            $table->string('color_id')->nullable();
-            $table->string('attribute_id')->nullable();
-            $table->string('attribute_item_id')->nullable();
-            $table->string('unit_price')->nullable();
+            $table->integer('product_id');
+            $table->integer('color_id')->nullable();
+            $table->integer('attribute_id')->nullable();
+            $table->integer('attribute_item_id')->nullable();
             $table->double('discount_amount', 10, 2)->nullable();
             $table->enum('discount_type', ['percent', 'fixed'])->default('fixed');
             $table->string('discount_starts_at')->nullable();

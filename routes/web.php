@@ -1,12 +1,17 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+// Route::get('/', function () {
+//     return view('welcome');
+// })->name('home');
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/shop', [HomeController::class, 'shop'])->name('shop');
+Route::get('/products/{slug}', [HomeController::class, 'productSingle'])->name('productSingle');
 
 // Route::middleware([
 //     'auth:sanctum',
@@ -17,6 +22,9 @@ Route::get('/', function () {
 //         return view('dashboard');
 //     })->name('dashboard');
 // });
+
+
+
 
 
 Route::middleware(['admin'])->group(function(){
@@ -58,9 +66,12 @@ Route::middleware(['admin'])->group(function(){
     Route::get('/add_product', [ProductController::class, 'addProduct'])->name('add_product');
     Route::get('/product_edit/{id}', [ProductController::class, 'productEdit'])->name('product_edit');
     Route::post('/get_variant_details', [ProductController::class, 'get_variant_details'])->name('get_variant_details');
+    Route::post('/get_variant_details_edit', [ProductController::class, 'get_variant_details_edit'])->name('get_variant_details_edit');
     Route::post('/get_attributes_details', [ProductController::class, 'get_attributes_details'])->name('get_attributes_details');
+    Route::post('/get_attributes_details_edit', [ProductController::class, 'get_attributes_details_edit'])->name('get_attributes_details_edit');
     Route::post('/product_add_post', [ProductController::class, 'product_add_post'])->name('product.add.post');
     Route::get('/all_products', [ProductController::class, 'allProducts'])->name('all.products');
+    Route::get('/product_edit_get_details', [ProductController::class, 'productEditGetDetails'])->name('product.edit.get.details');
 
     Route::post('/todays_deal_status_change_ajax', [ProductController::class, 'todaysDealStatusChangeAjax'])->name('todays_deal_status_change_ajax');
     Route::post('/product_status_change_ajax', [ProductController::class, 'productStatusChangeAjax'])->name('product_status_change_ajax');
